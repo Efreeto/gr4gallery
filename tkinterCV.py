@@ -46,10 +46,8 @@ def update_image(image_label, frame):
     if len(frame.shape) == 2:
         im = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
     else:
-        im = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        im = frame
         vidIm = im
-        #im = frame
-
 
     a = Image.fromarray(im)
     b = ImageTk.PhotoImage(image=a)
@@ -70,8 +68,7 @@ def stepCV(cap):
 
     a = 0.5
     im = cv2.resize(frame, (0, 0), fx=a, fy=a)
-
-    # gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+    im = CONVERT_bgr_to_rgb(im)
     return im
 
 # multiprocessing image processing functions-------------------------------------
@@ -84,12 +81,10 @@ def image_capture(queue):
     cap.release()
 
 def SET_cwd():
-
     # os.getcwd()
     print(askdirectory())
 
 def SET_cwd(path):
-
     os.chdir(path)
     RECREATE_im()
 
@@ -100,10 +95,11 @@ def SET_cwdDefault():
     SET_cwd('D:\VIEW\wallpapers')
 
 def LOAD_im(path):
-    return cv2.imread(path)
+    im = cv2.imread(path)
+    im = CONVERT_bgr_to_rgb(im)
+    return im
 
 def RESIZE(im, dim):
-
     # use inter cubic of inter whatsoever if its bigger or smaller than original
     return cv2.resize(im, dim, interpolation = cv2.INTER_CUBIC)
 
@@ -117,6 +113,11 @@ def RESIZE_height(im, h):
     dim = (h, int(im.shape[0] * r))
     return RESIZE(im,dim)
 
+def CONVERT_bgr_to_rgb(bgr_img):
+    b, g, r = cv2.split(bgr_img)
+    rgb_img = cv2.merge([r,g,b])
+    return rgb_img
+    # return cv2.cvtColor(bgr_img, cv2.COLOR_BGR2RGB)
 
 def SELECT_pic(path):
     # heigh = imlSelected.get('height')
@@ -126,15 +127,16 @@ def SELECT_pic(path):
                  RESIZE_height(LOAD_im(path), height ) )
 
 def SAVE_snapshot():
-    cv2.imwrite('snapshot.png',vidIm)
+    im = CONVERT_bgr_to_rgb(vidIm)  # This will actually convert rgb to bgr (same operation). This is necessary because imwrite saves images in the reverse order
+    cv2.imwrite('snapshot.png', im)
     RECREATE_im()
-
 
 def SHOW_imageIn(obj, im):
     a = Image.fromarray(im)
     b = ImageTk.PhotoImage(image=a)
     obj.configure(image=b)
     obj._image_cache = b
+
 def REMOVE_oldPics():
     global pics
     if not ('pics' in vars() or 'pics' in globals()):
