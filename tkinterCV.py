@@ -5,12 +5,17 @@ import array
 
 import numpy as np
 from multiprocessing import Process, Queue
-from Queue import Empty
 import cv2
 from PIL import Image, ImageTk
 # import time
-import Tkinter as tk
-import Tkconstants, tkFileDialog
+try:    # Python 2
+    from Queue import Empty
+    import Tkinter as tk
+    import Tkconstants, tkFileDialog
+except: # Python 3
+    import tkinter as tk
+    import tkinter.filedialog as tkFileDialog
+    from queue import Empty
 
 # from thisCV import *
 # import numpy as np
@@ -141,7 +146,7 @@ def REMOVE_oldPics():
 
 def RECREATE_im():
     global pics
-    print os.getcwd()
+    print (os.getcwd())
 
     types = ('*.png','*.jpg','*.bmp') # the tuple of file types
     pIms = []
@@ -152,14 +157,14 @@ def RECREATE_im():
     picH = 150
     picInd = 0
     REMOVE_oldPics()
-    print pIms
+    print (pIms)
     for pIm in pIms:
     #     imLabel.grid(row=3, column=2, rowspan=1, columnspan=1, sticky=tk.NSEW )
 
         #pics.append( tk.Label(frPics) )
 
         # pics.append( tk.Button(frPics, text='Q', command=lambda: quit_(root, p)) )
-        print pIm
+        print (pIm)
         pics.append( tk.Button(frPics, command=lambda pIm=pIm: SELECT_pic(pIm)) )
         # pics[-1].get
         picCol = picInd % gridW
@@ -251,7 +256,7 @@ def GUI_setup(root):
     imlSelected.grid(row=3, column=2, rowspan=1, columnspan=1, sticky=tk.NSEW )
     #____________________________________________________
     frPicShow.grid (row=2, column=5, rowspan=1, columnspan=1, sticky=tk.NSEW )
-    print 'GUI initialized...'
+    print ('GUI initialized...')
 
     #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Key binding
@@ -266,7 +271,7 @@ def HOTKEY_setup(root, p):
 
 if __name__ == '__main__':
     queue = Queue()
-    print 'queue initialized...'
+    print ('queue initialized...')
     root = tk.Tk()
     # root.columnconfigure(0, weight=1)
     # root.configure(sticky=tk.NSEW )
@@ -278,7 +283,7 @@ if __name__ == '__main__':
     HOTKEY_setup(root, p)
 
     p.start()
-    print 'image capture process has started...'
+    print ('image capture process has started...')
 
     root.minsize(width=640, height=100)
 
@@ -287,9 +292,9 @@ if __name__ == '__main__':
     root.after(0, func=lambda: update_all(root, params))
 
 
-    print 'root.after was called...'
+    print ('root.after was called...')
     root.mainloop()
-    print 'mainloop exit'
+    print ('mainloop exit')
     p.terminate()
     # p.join()
-    print 'image capture process exit'
+    print ('image capture process exit')
