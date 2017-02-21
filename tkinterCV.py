@@ -7,19 +7,14 @@ import numpy as np
 from multiprocessing import Process, Queue
 import cv2
 from PIL import Image, ImageTk
-# import time
 try:    # Python 2
-    from Queue import Empty
+    # from Queue import Empty
     import Tkinter as tk
     import Tkconstants, tkFileDialog
 except: # Python 3
+    # from queue import Empty
     import tkinter as tk
     import tkinter.filedialog as tkFileDialog
-    from queue import Empty
-
-# from thisCV import *
-# import numpy as np
-# import cv2
 
 import sys
 import os
@@ -27,10 +22,7 @@ import glob
 
 # tkinter GUI functions----------------------------------------------------------
 global root
-global frPics
-global imlSelected
 global vidIm
-global pics
 
 def quit_(root, process, *whatever):
     process.terminate()
@@ -94,60 +86,92 @@ def ASK_cwd():
 def SET_cwdDefault():
     SET_cwd('D:\VIEW\wallpapers')
 
-def LOAD_im(path):
-    im = cv2.imread(path)
-    im = CONVERT_bgr_to_rgb(im)
-    return im
+class gr4gallery():
+    def __init__(self, frameGallery, frameSelectedPic):
+        self.FrameGallery = frameGallery
+        self.FrameSelectedPic = frameSelectedPic
+        self.pics = []
 
-def RESIZE(im, dim):
-    # use inter cubic of inter whatsoever if its bigger or smaller than original
-    return cv2.resize(im, dim, interpolation = cv2.INTER_CUBIC)
+    def REMOVE_oldPics(self):
+        print('destroying pics '+ str(len(self.pics)))
+        for pic in self.pics:
+            pic.destroy()
+        del self.pics[:]
+            
+    def DISPLAY_Gallery(self, pIms):
+        gridW = 3
+        picH = 150
+        picInd = 0
+        self.REMOVE_oldPics()
+        print (pIms)
+        for pIm in pIms:
+        #     imLabel.grid(row=3, column=2, rowspan=1, columnspan=1, sticky=tk.NSEW )
+    
+            #self.pics.append( tk.Label(self.FrameGallery) )
+    
+            # self.pics.append( tk.Button(self.FrameGallery, text='Q', command=lambda: quit_(root, p)) )
+            print (pIm)
+            self.pics.append( tk.Button(self.FrameGallery, command=lambda pIm=pIm: self.SELECT_pic(pIm)) )
+            # self.pics[-1].get
+            picCol = picInd % gridW
+            picRow = int(picInd / gridW)
+            # self.pics[-1].pack()
+            self.pics[-1].grid(row=picRow, column=picCol, rowspan=1, columnspan=1, sticky=tk.NSEW)
+            im = self.RESIZE_height(self.LOAD_im(pIm), picH)
+            self.SHOW_imageIn(self.pics[-1], im)
+            self.pics[-1].configure(height=picH)
+            picInd += 1
+        
+    def LOAD_im(self, path):
+        im = cv2.imread(path)
+        im = self.CONVERT_bgr_to_rgb(im)
+        return im
+    
+    def CONVERT_bgr_to_rgb(self, bgr_img):
+        b, g, r = cv2.split(bgr_img)
+        rgb_img = cv2.merge([r,g,b])
+        return rgb_img
+        # return cv2.cvtColor(bgr_img, cv2.COLOR_BGR2RGB)
+        
+    def RESIZE(self, im, dim):
+        # use inter cubic of inter whatsoever if its bigger or smaller than original
+        return cv2.resize(im, dim, interpolation = cv2.INTER_CUBIC)
 
-def RESIZE_width(im, w):
-    r = float(w) / im.shape[0]
-    dim = (int(im.shape[1] * r), w)
-    return RESIZE(im,dim)
+    def RESIZE_width(self, im, w):
+        r = float(w) / im.shape[0]
+        dim = (int(im.shape[1] * r), w)
+        return self.RESIZE(im,dim)
+    
+    def RESIZE_height(self, im, h):
+        r = float(h) / im.shape[1]
+        dim = (h, int(im.shape[0] * r))
+        return self.RESIZE(im,dim)
+    
+    def SELECT_pic(self, path):
+        # heigh = self.FrameSelectedPic.get('height')
+        height = 500
+        print(path + " = image trying to select")
+        self.SHOW_imageIn(self.FrameSelectedPic,
+                    self.RESIZE_height(self.LOAD_im(path), height ) )
 
-def RESIZE_height(im, h):
-    r = float(h) / im.shape[1]
-    dim = (h, int(im.shape[0] * r))
-    return RESIZE(im,dim)
-
+    def SHOW_imageIn(self, obj, im):
+        a = Image.fromarray(im)
+        b = ImageTk.PhotoImage(image=a)
+        obj.configure(image=b)
+        obj._image_cache = b
+    
 def CONVERT_bgr_to_rgb(bgr_img):
     b, g, r = cv2.split(bgr_img)
     rgb_img = cv2.merge([r,g,b])
     return rgb_img
     # return cv2.cvtColor(bgr_img, cv2.COLOR_BGR2RGB)
-
-def SELECT_pic(path):
-    # heigh = imlSelected.get('height')
-    height = 500
-    print(path + " = image trying to select")
-    SHOW_imageIn(imlSelected,
-                 RESIZE_height(LOAD_im(path), height ) )
-
+        
 def SAVE_snapshot():
     im = CONVERT_bgr_to_rgb(vidIm)  # This will actually convert rgb to bgr (same operation). This is necessary because imwrite saves images in the reverse order
     cv2.imwrite('snapshot.png', im)
     RECREATE_im()
 
-def SHOW_imageIn(obj, im):
-    a = Image.fromarray(im)
-    b = ImageTk.PhotoImage(image=a)
-    obj.configure(image=b)
-    obj._image_cache = b
-
-def REMOVE_oldPics():
-    global pics
-    if not ('pics' in vars() or 'pics' in globals()):
-        pics = []
-    else:
-        print('destroying pics '+ str(len(pics)))
-        for pic in pics:
-            pic.destroy()
-
 def RECREATE_im():
-    global pics
     print (os.getcwd())
 
     types = ('*.png','*.jpg','*.bmp') # the tuple of file types
@@ -155,28 +179,7 @@ def RECREATE_im():
     for t in types:
         pIms.extend(glob.glob(t))
 
-    gridW = 3
-    picH = 150
-    picInd = 0
-    REMOVE_oldPics()
-    print (pIms)
-    for pIm in pIms:
-    #     imLabel.grid(row=3, column=2, rowspan=1, columnspan=1, sticky=tk.NSEW )
-
-        #pics.append( tk.Label(frPics) )
-
-        # pics.append( tk.Button(frPics, text='Q', command=lambda: quit_(root, p)) )
-        print (pIm)
-        pics.append( tk.Button(frPics, command=lambda pIm=pIm: SELECT_pic(pIm)) )
-        # pics[-1].get
-        picCol = picInd % gridW
-        picRow = int(picInd / gridW)
-        # pics[-1].pack()
-        pics[-1].grid(row=picRow, column=picCol, rowspan=1, columnspan=1, sticky=tk.NSEW)
-        im = RESIZE_height(LOAD_im(pIm),picH)
-        SHOW_imageIn(pics[-1],im)
-        pics[-1].configure(height=picH)
-        picInd += 1
+    snapshotGallery.DISPLAY_Gallery(pIms)
 
 def askdirectory():
     """Returns a selected directoryname."""
@@ -190,8 +193,7 @@ def askdirectory():
     return tkFileDialog.askdirectory(**dir_opt)
 
 def GUI_setup(root):
-    global frPics
-    global imlSelected
+    global snapshotGallery
     root.grid_rowconfigure(0, weight=1)
     root.grid_columnconfigure(0, weight=1)
     # GUI Items
@@ -258,6 +260,8 @@ def GUI_setup(root):
     imlSelected.grid(row=3, column=2, rowspan=1, columnspan=1, sticky=tk.NSEW )
     #____________________________________________________
     frPicShow.grid (row=2, column=5, rowspan=1, columnspan=1, sticky=tk.NSEW )
+    
+    snapshotGallery = gr4gallery(frPics, imlSelected)
     print ('GUI initialized...')
 
     #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
